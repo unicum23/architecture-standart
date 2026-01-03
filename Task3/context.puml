@@ -1,0 +1,23 @@
+@startuml context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+Person(user, "Клиент банка", "Физическое лицо — пользователь банковских сервисов")
+Person(manager, "Сотрудник банка", "Специалист, участвующий в обработке депозитов")
+
+Boundary(bank, "Банк Стандарт") {
+    System(ui, "Интернет-банк", "Цифровая платформа дистанционного банковского обслуживания")
+    System(deposits, "Депозитная платформа", "Система оформления и сопровождения депозитных продуктов")
+    System(abs, "АБС", "Центральная автоматизированная банковская система")
+}
+
+System_Ext(sms_provider, "SMS-провайдер", "Внешний сервис доставки SMS-уведомлений")
+System_Ext(call_center, "Колл-центр", "Внешняя система приема обращений и заявок клиентов")
+
+Rel_D(user, ui, "Оформляет заявку на депозит", "HTTPS/TCP")
+Rel(user, call_center, "Обращается с запросом", "Телефонный канал")
+Rel(ui, deposits, "Запрашивает и передает данные", "HTTPS/TCP")
+Rel(deposits, call_center, "Передает информацию по заявкам", "HTTPS/TCP")
+Rel(deposits, sms_provider, "Инициирует отправку уведомлений", "HTTPS/TCP")
+BiRel(deposits, abs, "Синхронизация и обмен данными", "HTTPS/TCP")
+Rel_R(manager, deposits, "Подтверждает и согласует условия", "HTTPS/TCP")
+@enduml

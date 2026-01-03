@@ -1,0 +1,67 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user_public_client, "Клиент банка", "Рассматривает открытие депозитного продукта")
+Person(user_manager_backoffice, "Менеджер бэк-офиса", "Сотрудник, обрабатывающий заявки и условия")
+Person(user_manager_frontoffice, "Менеджер фронт-офиса", "Сотрудник, взаимодействующий с клиентами")
+
+System_Ext(callcenter, "Колл-центр", "Внешняя клиент-серверная система подрядчика")
+System_Ext(sms_operator, "СМС-провайдер", "Внешний сервис рассылки SMS-уведомлений")
+
+System_Boundary(bank, "Банк Стандарт") {
+
+    Container(waf, "Web Application Firewall", "WAF", "Фильтрация и защита от несанкционированного и вредоносного трафика")
+    Container(api_gateway, "API Gateway", "Nginx", "Единая точка входа и маршрутизация API-запросов")
+    Container_Ext(notifications_service, "Сервис уведомлений", "ASP.NET MVC 4.5", "Формирование уведомлений и передача их во внешние каналы")
+    Container_Ext(monitoring, "Система мониторинга", "Grafana, Prometheus, Alertmanager", "Мониторинг состояния сервисов и оповещение об инцидентах")
+    Container(managers_panel_ui, "Интерфейс менеджеров", "ReactJS", "Веб-интерфейс для работы сотрудников банка")
+    Container(managers_panel_app, "Сервис панели менеджеров", "Java", "Серверная часть для обработки действий менеджеров")
+    ContainerQueue(message_queue, "Брокер сообщений", "Kafka", "Асинхронный обмен событиями между компонентами")
+
+    Container_Boundary(internet_bank, "Интернет-банк") {
+        Container(internet_bank_app, "Веб-приложение интернет-банка", "ASP.NET MVC 4.5", "Существующий пользовательский веб-интерфейс")
+        ContainerDb(internet_bank_db, "БД интернет-банка", "MS SQL", "Хранение информации о клиентах и депозитах")
+        Rel_D(internet_bank_app, internet_bank_db, "чтение и запись данных", "SQL")
+    }
+
+    Container_Boundary(deposits_service, "Депозитный сервис") {
+        Container(deposits_ui, "Микрофронтенд депозитов", "ReactJS", "UI для выбора и оформления депозитов")
+        Container(deposits_api, "API депозитов", "Java", "Бизнес-логика и API управления депозитами")
+        ContainerDb(deposits_db, "БД депозитов", "PostgreSQL", "Хранение заявок и параметров депозитов")
+        Rel_D(deposits_api, deposits_db, "чтение и запись данных", "SQL")
+    }
+
+    Container_Boundary(abs, "АБС") {
+        Container(abs_client, "Клиент АБС", "Delphi", "Основное рабочее приложение менеджеров")
+        Container(abs_db, "База данных АБС", "Oracle", "Хранилище данных и бизнес-логика на хранимых процедурах")
+        Container(abs_integration_deposits, "Прокси-интеграции депозитов", "ASP.NET MVC 4.5", "Контролируемый доступ АБС к событиям в Kafka")
+        Rel_D(abs_client, abs_db, "чтение и запись данных", "SQL")
+        Rel(abs_integration_deposits, abs_db, "запись данных", "SQL")
+    }
+
+    Rel(user_public_client, internet_bank_app, "Использует функциональность", "HTTPS/TCP")
+    Rel(user_public_client, callcenter, "Оставляет заявку", "Телефонный канал")
+    Rel(sms_operator, user_public_client, "Доставляет уведомления", "SMS")
+
+    Rel(user_manager_backoffice, abs_client, "Работает в системе")
+    Rel(user_manager_frontoffice, abs_client, "Работает в системе")
+    Rel(user_manager_backoffice, managers_panel_ui, "Использует веб-интерфейс", "HTTPS/TCP")
+    Rel(user_manager_frontoffice, managers_panel_ui, "Использует веб-интерфейс", "HTTPS/TCP")
+    Rel(callcenter, managers_panel_ui, "Передает данные по заявкам", "HTTPS/TCP")
+
+    Rel(api_gateway, deposits_api, "Маршрутизирует запросы", "HTTPS/TCP")
+    Rel(api_gateway, managers_panel_app, "Маршрутизирует запросы", "HTTPS/TCP")
+    Rel(deposits_ui, api_gateway, "Обращается к API", "REST, HTTPS/TCP")
+    Rel(managers_panel_app, api_gateway, "Вызывает API", "HTTPS/TCP")
+    Rel(managers_panel_ui, managers_panel_app, "Получает данные", "HTTPS/TCP")
+
+    Rel(deposits_ui, internet_bank_app, "Встраивается как модуль", "JavaScript, HTTPS/TCP")
+    Rel(deposits_api, message_queue, "Публикует события", "Kafka")
+    Rel(message_queue, notifications_service, "Подписывается на события", "Kafka")
+    Rel(notifications_service, sms_operator, "Отправляет сообщения", "HTTP API")
+    Rel(abs_integration_deposits, message_queue, "Потребляет события", "Kafka")
+    Rel(deposits_api, message_queue, "Потребляет события", "Kafka")
+    Rel(abs_client, message_queue, "Генерирует события", "Kafka")
+}
+@enduml
