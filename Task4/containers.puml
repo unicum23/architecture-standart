@@ -1,0 +1,31 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(cc_manager, "Оператор колл-центра", "Сотрудник, принимающий обращения и заявки клиентов")
+Person(bo_manager, "Сотрудник бэк-офиса", "Менеджер, отвечающий за условия депозитов")
+
+System_Ext(call_center, "Колл-центр", "Внешняя система обработки входящих обращений")
+
+System_Boundary(bank, "Банк Стандарт") {
+
+    System_Ext(deposits, "Депозитная система", "Сервис управления ставками и депозитными продуктами")
+    ContainerQueue(message_queue, "Брокер сообщений", "Kafka", "Асинхронная передача данных между системами")
+
+    Container_Boundary(file_transfer, "Подсистема передачи файлов") {
+        Container(sftp, "SFTP-сервер", "SFTP", "Защищенный сервер обмена файлами со ставками")
+        Container(nfs, "Файловое хранилище", "NFS", "Общее хранилище на базе одной или нескольких виртуальных машин")
+        Container(ft_api, "API файлового хранилища", "REST", "Сервисный API для доступа и управления файлами")
+
+        Rel_D(sftp, nfs, "Сохраняет полученные файлы", "S3-compatible API")
+        Rel_L(ft_api, nfs, "Записывает и обновляет файлы", "S3-compatible API")
+    }
+
+    Rel_D(deposits, message_queue, "Публикует ставки по депозитам", "Kafka")
+    Rel_R(ft_api, message_queue, "Получает данные о ставках", "Kafka")
+}
+
+Rel_R(cc_manager, call_center, "Принимает обращения клиентов", "Телефонный канал")
+Rel_D(cc_manager, sftp, "Запрашивает актуальные ставки", "SFTP")
+Rel_D(bo_manager, deposits, "Актуализирует ставки по депозитам", "HTTPS/TCP")
+@enduml
