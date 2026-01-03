@@ -1,0 +1,69 @@
+### ===== IntelliJ IDEA =====
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+### ===== Gradle / Maven =====
+.gradle/
+build/
+target/
+
+### ===== Logs =====
+*.log
+logs/
+
+### ===== OS junk =====
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+### ===== Git internal / tooling =====
+.git/
+.gitmodules
+.gitconfig
+.gitattributes
+.gitkeep
+
+### ===== Editors / IDEs =====
+.vscode/
+*.swp
+*.swo
+*~
+.idea_modules/
+
+### ===== Env / secrets =====
+.env
+.env.*
+!.env.example
+
+### ===== Node / frontend (если есть) =====
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+### ===== Test / coverage =====
+coverage/
+*.lcov
+
+### ===== Temporary =====
+tmp/
+temp/
+*.tmp
+*.bak
+*.old
+
+### ===== Docker =====
+*.pid
+docker-compose.override.yml
+
+### ===== Mac extended attributes =====
+.fseventsd
